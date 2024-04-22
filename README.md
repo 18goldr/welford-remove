@@ -1,4 +1,4 @@
-# Welford
+# Welford-Remove
 This library is a Python (Numpy) implementation of a modified Welford's algorithm,
 which is online and parallel algorithm for calculating variances. Typically, Welford's algorithm
 only allows for adding data points. This modification allows for removing data points.
