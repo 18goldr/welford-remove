@@ -6,16 +6,27 @@ This library is a Python (Numpy) implementation of a modified Welford's algorith
 which is online and parallel algorithm for calculating variances. Typically, Welford's algorithm
 only allows for adding data points. This modification allows for removing data points.
 
-Welford's method is more numerically stable than the standard method as
-described in the following blog, However, there has been no analysis on whether
-removing data points through the modification provided is numerically stable.
+Welford's algorithm is described in the following:
+
+* https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Online_algorithm
+* https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
+
+The modification for removing data points is described here:
+* https://stackoverflow.com/questions/30876298/removing-a-prior-sample-while-using-welfords-method-for-computing-single-pass-v
+
+Welford's original method is more numerically stable than the standard method as
+described in the following blog.
     * Accurately computing running variance: www.johndcook.com/blog/standard_deviation
+
+However, There has been no formal analysis on whether
+the modified version of the algorithm provided here is numerically stable, but based
+on the testing done in test_welford.test_remove, I have reason to believe it is.
 
 This library is inspired by the jvf's implementation, which is implemented
 without using numpy library. In particular, this implementation is a fork
 of the implementation by a-mitani,
-    * implementation done by jvf: github.com/jvf/welford
-    * implementation done by a-mitani: github.com/a-mitani/welford
+    * Implementation done by jvf: github.com/jvf/welford
+    * Implementation done by a-mitani: github.com/a-mitani/welford
 """
 from __future__ import annotations
 
@@ -173,8 +184,9 @@ class Welford:
             self.__backup_attrs()
 
         # The reverse of Welford's algorithm.
+        old_m = np.copy(self.__m)
         self.__m -= (element - self.__m) / (self.count - 1)
-        self.__s -= (element - self.__m) * (element - self.__m_old)
+        self.__s -= (element - self.__m) * (element - old_m)
         self.__count -= 1
 
     def remove_all(self, elements: npt.NDArray[npt.NDArray], backup_flg: bool = True) -> None:
@@ -244,7 +256,7 @@ class Welford:
         filled with NaN values of the appropriate shape.
 
         Args:
-            ddof (int): The delta degrees of freedom.
+            ddof: The delta degrees of freedom.
 
         """
         if self.__count <= 0:
