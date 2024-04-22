@@ -7,7 +7,7 @@ The algorithm is described in the followings,
 * [Wikipedia:Welford Online Algorithm](https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Online_algorithm)
 * [Wikipedia:Welford Parallel Algorithm](https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm)
 
-Welford's method is more numerically stable than the standard method. The theoritical background of Welford's method is mentioned in detail on the following blog articles. Please refer them if you are interested in.
+Welford's method is more numerically stable than the standard method. The theoretical background of Welford's method is mentioned in detail on the following blog articles. Please refer them if you are interested in.
 
 * http://www.johndcook.com/blog/standard_deviation
 * https://jonisalonen.com/2013/deriving-welfords-method-for-computing-variance/

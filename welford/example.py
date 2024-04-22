@@ -5,7 +5,7 @@ from welford import Welford
 # Initialize Welford object
 w = Welford()
 
-# Input data samples sequentialy
+# Input data samples sequentially
 w.add(np.array([0, 100]))
 w.add(np.array([1, 110]))
 w.add(np.array([2, 120]))
@@ -23,6 +23,17 @@ w.add(np.array([4, 140]))
 print(w.mean)  # mean --> [  2. 120.]
 print(w.var_s)  # sample variance --> [  2.5 250. ]
 print(w.var_p)  # population variance --> [  2. 200.]
+
+# You can remove other sample after calculating variances.
+w.remove(np.array([3, 130]))
+w.remove(np.array([4, 140]))
+print(w.mean)  # mean --> [  1. 110.]
+print(w.var_s)  # sample variance --> [1, 100]
+print(w.var_p)  # population variance --> [ 0.6666 66.66]
+
+# You can also get the standard deviation
+print(w.std_s)  # sample standard deviation --> [1, 10]
+print(w.std_p)  # population standard deviation --> [0.81649658 8.16496581]
 # %%
 import numpy as np
 from welford import Welford

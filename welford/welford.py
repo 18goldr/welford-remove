@@ -2,102 +2,134 @@
 # -*- coding: utf-8 -*-
 
 """
-This library is python(numpy) implementation of Welford's algorithm, 
-which is online and parallel algorithm for calculating variances.
+This library is a Python (Numpy) implementation of a modified Welford's algorithm,
+which is online and parallel algorithm for calculating variances. Typically, Welford's algorithm
+only allows for adding data points. This modification allows for removing data points.
 
-Welfords method is more numerically stable than the standard method as
-described in the following blog,
+Welford's method is more numerically stable than the standard method as
+described in the following blog, However, there has been no analysis on whether
+removing data points through the modification provided is numerically stable.
     * Accurately computing running variance: www.johndcook.com/blog/standard_deviation
 
 This library is inspired by the jvf's implementation, which is implemented
-without using numpy library.
-    * implementaion done by jvf: github.com/jvf/welford
+without using numpy library. In particular, this implementation is a fork
+of the implementation by a-mitani,
+    * implementation done by jvf: github.com/jvf/welford
+    * implementation done by a-mitani: github.com/a-mitani/welford
 """
+from __future__ import annotations
+
 import numpy as np
+import numpy.typing as npt
+from typing import Optional
 
 
 class Welford:
-    """class Welford
-
-     Accumulator object for Welfords online / parallel variance algorithm.
+    """Accumulator object for Welford's online and parallel variance algorithm which provides the ability to remove data points.
 
     Attributes:
         count (int): The number of accumulated samples.
-        mean (array(D,)): Mean of the accumulated samples.
-        var_s (array(D,)): Sample variance of the accumulated samples.
-        var_p (array(D,)): Population variance of the accumulated samples.
+        mean (np.array(D,)): Mean of the accumulated samples.
+        var_s (np.array(D,)): Sample variance of the accumulated samples.
+        var_p (np.array(D,)): Population variance of the accumulated samples.
+        std_s (np.array(D,)): Sample standard deviation of the accumulated samples.
+        std_p (np.array(D,)): Population standard deviation of the accumulated samples.
     """
 
-    def __init__(self, elements=None):
-        """__init__
-
+    def __init__(self, elements: Optional[npt.NDArray[npt.NDArray]] = None):
+        """
         Initialize with an optional data. 
-        For the calculation efficiency, Welford's method is not used on the initialization process.
+        For calculation efficiency, Welford's method is not used in the initialization process.
 
         Args:
-            elements (array(S, D)): data samples.
+            elements: The data points to initialize with.
 
         """
+        self.__count: int = 0
+        self.__shape: Optional[tuple]
+        self.__m: Optional[npt.NDArray]
+        self.__s: Optional[npt.NDArray]
+        self.__m_old: Optional[npt.NDArray]
+        self.__s_old: Optional[npt.NDArray]
+        self.__count_old: Optional[int]
 
         # Initialize instance attributes
         if elements is None:
             self.__shape = None
-            # current attribute values
+            # Current attribute values
             self.__count = 0
             self.__m = None
             self.__s = None
-            # previous attribute values for rollbacking
+            # Previous attribute values for rolling back
             self.__count_old = None
             self.__m_old = None
             self.__s_old = None
-
         else:
             self.__shape = elements[0].shape
-            # current attribute values
+            # Current attribute values
             self.__count = elements.shape[0]
-            self.__m = np.mean(elements, axis=0)
-            self.__s = np.var(elements, axis=0, ddof=0) * elements.shape[0]
-            # previous attribute values for rollbacking
+            self.__m = np.array(np.mean(elements, axis=0))
+            self.__s = np.array(np.var(elements, axis=0, ddof=0) * elements.shape[0])
+            # Previous attribute values for rolling back
             self.__count_old = None
             self.__init_old_with_nan()
 
     @property
-    def count(self):
+    def count(self) -> Optional[int]:
+        """Get the number of accumulated samples."""
         return self.__count
 
     @property
-    def mean(self):
+    def mean(self) -> Optional[npt.NDArray]:
+        """Get the mean."""
         return self.__m
 
     @property
-    def var_s(self):
-        return self.__getvars(ddof=1)
+    def var_s(self) -> Optional[npt.NDArray]:
+        """Get the sample variance."""
+        return self.__get_var_with_ddof(ddof=1)
 
     @property
-    def var_p(self):
-        return self.__getvars(ddof=0)
+    def var_p(self) -> Optional[npt.NDArray]:
+        """Get the population variance."""
+        return self.__get_var_with_ddof(ddof=0)
 
-    def add(self, element, backup_flg=True):
-        """ add
+    @property
+    def std_s(self) -> Optional[npt.NDArray]:
+        """Get the sample standard deviation."""
+        if self.var_s is None:
+            return None
 
-        add one data sample.
+        return np.sqrt(self.var_s, dtype=np.longdouble)
+
+    @property
+    def std_p(self) -> Optional[npt.NDArray]:
+        """Get the population standard deviation."""
+        if self.var_p is None:
+            return None
+
+        return np.sqrt(self.var_p, dtype=np.longdouble)
+
+    def add(self, element: npt.NDArray, backup_flg: bool = True) -> None:
+        """Add one data point.
 
         Args:
-            element (array(D, )): data sample.
-            backup_flg (boolean): if True, backup previous state for rollbacking.
+            element: The data point to add.
+            backup_flg: If True, backup current state for rolling back.
 
         """
-        # Initialize if not yet.
+
+        # Initialize if not done so.
         if self.__shape is None:
             self.__shape = element.shape
             self.__m = np.zeros(element.shape)
             self.__s = np.zeros(element.shape)
             self.__init_old_with_nan()
-        # argument check if already initialized
+            self.__count = 0
         else:
+            # Argument check if already initialized
             assert element.shape == self.__shape
 
-        # backup for rollbacking
         if backup_flg:
             self.__backup_attrs()
 
@@ -107,45 +139,114 @@ class Welford:
         self.__m += delta / self.__count
         self.__s += delta * (element - self.__m)
 
-    def add_all(self, elements, backup_flg=True):
-        """ add_all
-
-        add multiple data samples.
+    def add_all(self, elements: npt.NDArray[npt.NDArray], backup_flg: bool = True) -> None:
+        """Add multiple data points.
 
         Args:
-            elements (array(S, D)): data samples.
-            backup_flg (boolean): if True, backup previous state for rollbacking.
+            elements: The data points to add.
+            backup_flg: If True, backup current state for rolling back.
 
         """
-        # backup for rollbacking
         if backup_flg:
             self.__backup_attrs()
 
         for elem in elements:
             self.add(elem, backup_flg=False)
 
-    def rollback(self):
+    def remove(self, element: npt.NDArray, backup_flg: bool = True) -> None:
+        """Remove one data point.
+
+        Using a method derived from the original Welford's algorithm,
+        we can remove a data point. Note however, there has been
+        no analysis on whether this is numerically stable. See
+        https://stackoverflow.com/questions/30876298/removing-a-prior-sample-while-using-welfords-method-for-computing-single-pass-v
+        for more information.
+
+        """
+
+        if self.__shape is None:
+            return
+        else:
+            assert element.shape == self.__shape
+
+        if backup_flg:
+            self.__backup_attrs()
+
+        # The reverse of Welford's algorithm.
+        self.__m -= (element - self.__m) / (self.count - 1)
+        self.__s -= (element - self.__m) * (element - self.__m_old)
+        self.__count -= 1
+
+    def remove_all(self, elements: npt.NDArray[npt.NDArray], backup_flg: bool = True) -> None:
+        """Remove multiple data points.
+
+        Args:
+            elements: The data points to remove.
+            backup_flg: If True, backup current state for rolling back.
+
+        """
+        if backup_flg:
+            self.__backup_attrs()
+
+        for elem in elements:
+            self.remove(elem, backup_flg=False)
+
+    def rollback(self) -> None:
+        """
+        Rollback to a prior state that has been saved.
+        In order for a state to be saved, you must call
+        pass backup_flag = True to either the method merge,
+        add, remove, add_all, or remove_all."""
+
+        if self.__shape is None:
+            return
+
         self.__count = self.__count_old
         self.__m[...] = self.__m_old[...]
         self.__s[...] = self.__s_old[...]
 
-    def merge(self, other, backup_flg=True):
-        """Merge this accumulator with another one."""
-        # backup for rollbacking
-        if backup_flg:
-            self.__backup_attrs()
+    def merge(self, other: Welford, backup_flg: bool = True) -> None:
+        """Merge this accumulator with another one.
 
-        count = self.__count + other.__count
-        delta = self.__m - other.__m
-        delta2 = delta * delta
-        m = (self.__count * self.__m + other.__count * other.__m) / count
-        s = self.__s + other.__s + delta2 * (self.__count * other.__count) / count
+        Args:
+            other: The other accumulator to merge with.
+            backup_flg: If True, backup current state for rolling back.
 
-        self.__count = count
-        self.__m = m
-        self.__s = s
+        """
 
-    def __getvars(self, ddof):
+        if other.__shape is None:
+            pass
+        elif self.__shape is None:
+            if backup_flg:
+                self.__backup_attrs()
+
+            self.__count = other.__count
+            self.__m = other.__m
+            self.__s = other.__s
+        else:
+            if backup_flg:
+                self.__backup_attrs()
+
+            count = self.__count + other.__count
+            delta = self.__m - other.__m
+            delta2 = delta * delta
+            m = (self.__count * self.__m + other.__count * other.__m) / count
+            s = self.__s + other.__s + delta2 * (self.__count * other.__count) / count
+
+            self.__count = count
+            self.__m = m
+            self.__s = s
+
+    def __get_var_with_ddof(self, ddof: int) -> Optional[npt.NDArray]:
+        """
+        Get the variance with a given delta degrees of freedom (ddof).
+        If there are fewer sample accumulated than the ddof, return a matrix
+        filled with NaN values of the appropriate shape.
+
+        Args:
+            ddof (int): The delta degrees of freedom.
+
+        """
         if self.__count <= 0:
             return None
         min_count = ddof
@@ -154,7 +255,11 @@ class Welford:
         else:
             return self.__s / (self.__count - ddof)
 
-    def __backup_attrs(self):
+    def __backup_attrs(self) -> None:
+        """
+        Backup current values for mean and variance. Used for when you want to rollback changes
+        made through adding or removing samples.
+        """
         if self.__shape is None:
             pass
         else:
@@ -162,7 +267,10 @@ class Welford:
             self.__m_old[...] = self.__m[...]
             self.__s_old[...] = self.__s[...]
 
-    def __init_old_with_nan(self):
+    def __init_old_with_nan(self) -> None:
+        """
+        Initialize old values with NaN.
+        """
         self.__m_old = np.empty(self.__shape)
         self.__m_old[...] = np.nan
         self.__s_old = np.empty(self.__shape)

@@ -51,7 +51,6 @@ def test_add():
     assert np.allclose(w.var_s, np.array([[0.5, 50, 5000], [0, 0, 0]]))
     assert np.allclose(w.var_p, np.array([[0.25, 25, 2500], [0, 0, 0]]))
 
-
 def test_add_all():
     w = Welford()
     a = np.array([[0, 100], [1, 110], [2, 120], [3, 130], [4, 140]])
@@ -120,7 +119,6 @@ def test_rollback():
     assert np.allclose(w.var_s, np.array([[2.0, 200, 20000], [0, 0, 0]]))
     assert np.allclose(w.var_p, np.array([[1, 100, 10000], [0, 0, 0]]))
 
-
 def test_merge():
     a = np.array([[0, 100], [1, 110], [2, 120], [3, 130], [4, 140]])
     wa = Welford(a)
@@ -158,3 +156,81 @@ def test_merge():
     assert np.allclose(wa.mean, np.array([[0.5, 105, 1050], [2, 220, 2200]]))
     assert np.allclose(wa.var_s, np.array([[0.5, 50, 5000], [0, 0, 0]]))
     assert np.allclose(wa.var_p, np.array([[0.25, 25, 2500], [0, 0, 0]]))
+
+
+def test_merge_empty_other():
+    a = np.array([[0, 100], [1, 110], [2, 120], [3, 130], [4, 140]])
+
+    wa = Welford(a)
+    wb = Welford()
+    wa.merge(wb)
+    assert wa.count == 5
+    assert np.allclose(wa.mean, np.array([2, 120]))
+    assert np.allclose(wa.var_s, np.array([2.5, 250]))
+    assert np.allclose(wa.var_p, np.array([2, 200]))
+    # assert
+
+def test_merge_empty_self():
+    b = np.array([[0, 100], [1, 110], [2, 120], [3, 130], [4, 140]])
+
+    wa = Welford()
+    wb = Welford(b)
+    wa.merge(wb)
+    assert wa.count == 5
+    assert np.allclose(wa.mean, np.array([2, 120]))
+    assert np.allclose(wa.var_s, np.array([2.5, 250]))
+    assert np.allclose(wa.var_p, np.array([2, 200]))
+
+
+def test_merge_both_empty():
+    wa = Welford()
+    wb = Welford()
+    wa.merge(wb)
+    assert wa.count == wb.count == 0
+    assert not wa.mean
+    assert not wa.var_s
+    assert not wa.var_p
+
+
+def test_add_many():
+    w = Welford()
+    running_sample = []
+
+    for i in range(0, 1000):
+        random_number = np.array([np.random.rand()])
+        running_sample.append(random_number)
+        w.add(random_number)
+
+        if i == 0:
+            continue
+
+        std = np.std(running_sample, ddof=1, dtype=np.longdouble)
+        mean = np.mean(running_sample, dtype=np.longdouble)
+
+        assert np.isclose(std, w.std_s)
+        assert np.isclose(mean, w.mean)
+
+
+def test_remove():
+    _test_remove_k_elements(1)
+    # _test_remove_k_elements(3)
+
+
+def _test_remove_k_elements(k: int):
+    random_sample = np.random.normal(0, 1, 1000)
+    w = Welford(random_sample)
+
+    for i in range(len(random_sample) - k):
+        # print(i)
+        # print(w.count)
+        indices_to_remove = list(range(i, i + k))
+        sample = np.delete(random_sample, indices_to_remove)
+        w.remove_all(np.take(random_sample, indices_to_remove))
+
+        std = np.std(sample, ddof=1, dtype=np.longdouble)
+        mean = np.mean(sample, dtype=np.longdouble)
+
+        assert np.isclose(std, w.std_s)
+        assert np.isclose(mean, w.mean)
+
+        w.rollback()
