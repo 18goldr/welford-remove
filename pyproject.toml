@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "welford-remove"
-version = "0.2.0"
+version = "0.2.1"
 description = "Python (NumPy) implementation of Welford's algorithm with the ability to remove data points."
-readme = { file = "README.rst", content-type = "text/x-rst" }
+readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
