@@ -28,7 +28,7 @@ of the implementation by a-mitani,
 ## Install
 Download package via [PyPI repository](https://pypi.org/project/welford-with-remove/)
 ```
-$ pip install welford
+$ pip install welford-remove
 ```
 
 ## Example
