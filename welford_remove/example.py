@@ -1,6 +1,6 @@
 # %%
 import numpy as np
-from welford import Welford
+from welford_remove import Welford
 
 # Initialize Welford object
 w = Welford()
@@ -36,7 +36,7 @@ print(w.std_s)  # sample standard deviation --> [1. 10.]
 print(w.std_p)  # population standard deviation --> [0.81649658. 8.16496581.]
 # %%
 import numpy as np
-from welford import Welford
+from welford_remove import Welford
 
 # Initialize Welford object with samples.
 ini = np.array([[0, 100], [1, 110], [2, 120]])
@@ -59,7 +59,7 @@ print(w.var_p)  # population variance --> [2. 200.]
 
 # %%
 import numpy as np
-from welford import Welford
+from welford_remove import Welford
 
 # Initialize two Welford objects
 w_1 = Welford()

@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "welford-remove"
+version = "0.2.0"
+description = "Python (NumPy) implementation of Welford's algorithm with the ability to remove data points."
+readme = { file = "README.rst", content-type = "text/x-rst" }
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["statistics", "online", "welford", "variance"]
+authors = [{ name = "Robbie Gold", email = "18goldr@gmail.com" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+dependencies = [
+    "numpy>=1.20",
+]
+
+[project.urls]
+Homepage = "https://github.com/18goldr/welford-remove"
+Repository = "https://github.com/18goldr/welford-remove"
+Issues = "https://github.com/18goldr/welford-remove/issues"
+
+[tool.setuptools.packages.find]
+include = ["welford_remove*"]
+exclude = ["tests*"]

@@ -1,3 +1,7 @@
-dist/*
-welford.egg-info/*
-welford/__pycache__/*
+dist/
+build/
+*.egg-info/
+__pycache__/
+**/__pycache__/
+.venv/
+.venv-test/

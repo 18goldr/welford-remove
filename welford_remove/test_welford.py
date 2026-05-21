@@ -1,5 +1,5 @@
 import numpy as np
-from welford import Welford
+from welford_remove import Welford
 
 
 def test_init():
@@ -7,7 +7,7 @@ def test_init():
     w = Welford(a)
     assert w.count == 1
     assert np.allclose(w.mean, np.array([0]))
-    assert np.alltrue(np.isnan(w.var_s))
+    assert np.all(np.isnan(w.var_s))
     assert np.allclose(w.var_p, np.array([0]))
 
     a = np.array([[0], [1]])
@@ -36,7 +36,7 @@ def test_add():
     w = Welford()
     w.add(np.array([0, 100]))
     assert np.allclose(w.mean, np.array([0, 100]))
-    assert np.alltrue(np.isnan(w.var_s))
+    assert np.all(np.isnan(w.var_s))
     assert np.allclose(w.var_p, np.array([0, 0]))
 
     w.add(np.array([1, 110]))
@@ -66,7 +66,7 @@ def test_add_all():
     w.add_all(a)
     assert w.count == 1
     assert np.allclose(w.mean, np.array([0, 100]))
-    assert np.alltrue(np.isnan(w.var_s))
+    assert np.all(np.isnan(w.var_s))
     assert np.allclose(w.var_p, np.array([0, 0]))
 
     a = np.array([[1, 110], [2, 120], [3, 130], [4, 140]])
